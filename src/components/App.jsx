@@ -53,7 +53,6 @@ export class App extends Component {
   }
 
   render() {
-    console.log('hello')
     let contactsList = [];
     const normalizedFilter = this.state.filter.toUpperCase();
       contactsList = this.state.contacts.filter(contact =>
