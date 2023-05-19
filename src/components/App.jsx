@@ -1,73 +1,61 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import ContactForm from './ContactForm';
 import ContactList from './ContactList';
 import Filter from './Filter';
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
+export function App() {
+  const [contacts, setContacts] = useState(
+    JSON.parse(window.localStorage.getItem('contacts')) ?? []
+  );
+  const [filter, setFilter] = useState('');
 
-  checkIfContactExists = contactName =>
-    this.state.contacts.find(({ name }) => name === contactName);
+  const checkIfContactExists = contactName =>
+    contacts.find(({ name }) => name === contactName);
 
-  addContact = data => {
+  const addContact = data => {
     const contactId = { id: nanoid() };
     const contact = { ...contactId, ...data };
 
-    if (this.checkIfContactExists(contact.name)) {
+    if (checkIfContactExists(contact.name)) {
       alert(`${contact.name} is already in contacts`);
       return false;
     }
 
-    this.setState(prevState => ({
-      contacts: [contact, ...prevState.contacts],
-    }));
+    setContacts(prevState => [...prevState, contact]);
     return true;
   };
 
-  addToLocaleStirage() {
-    const contactsJson = JSON.stringify(this.state.contacts);
-    localStorage.setItem('contacts', contactsJson);
-  }
-
-  handleSearchInput = e => {
-    this.setState({ filter: e.currentTarget.value });
+  const deleteContact = id => {
+    setContacts(prevState => prevState.filter(contact => contact.id !== id));
   };
 
-  deleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
+  const handleSearchInput = e => {
+    setFilter(e.currentTarget.value);
   };
 
-  componentDidMount() {
-    const parsedLocale = JSON.parse(localStorage.getItem('contacts'));
-    parsedLocale && this.setState({ contacts: parsedLocale });
-  }
+  useEffect(() => {
+    const addToLocaleStirage = () => {
+      const contactsJson = JSON.stringify(contacts);
+      window.localStorage.setItem('contacts', contactsJson);
+    };
+    addToLocaleStirage();
+  }, [contacts]);
 
-  componentDidUpdate(prevState) {
-    this.state.contacts !== prevState.contacts && this.addToLocaleStirage();
-  }
+  let contactsList = [];
+  const normalizedFilter = filter.toUpperCase();
+  contactsList = contacts.filter(contact =>
+    contact.name.toUpperCase().includes(normalizedFilter)
+  );
 
-  render() {
-    let contactsList = [];
-    const normalizedFilter = this.state.filter.toUpperCase();
-      contactsList = this.state.contacts.filter(contact =>
-      contact.name.toUpperCase().includes(normalizedFilter)
-    );
+  return (
+    <div>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={addContact} />
 
-    return (
-      <div>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.addContact} />
-
-        <h2>Contacts</h2>
-        <Filter onInput={this.handleSearchInput} />
-        <ContactList contacts={contactsList} onDelete={this.deleteContact} />
-      </div>
-    );
-  }
+      <h2>Contacts</h2>
+      <Filter onInput={handleSearchInput} />
+      <ContactList contacts={contactsList} onDelete={deleteContact} />
+    </div>
+  );
 }
